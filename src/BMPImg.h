@@ -5,8 +5,8 @@
 #include"Color.h"
 
 class BMPImg {
-	unsigned int width, height;
-	Color* data;
+	unsigned int m_width, m_height;
+	Color* m_data;
 public:
 	BMPImg() = default;
 	BMPImg(unsigned int width, unsigned int height);

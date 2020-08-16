@@ -12,3 +12,6 @@ Color::component_t& Color::g() {
 Color::component_t& Color::b() {
 	return m_b;
 }
+Color::component_t Color::brightness() {
+	return 0.2126 * m_r + 0.7152 * m_g + 0.0722 * m_b;
+}

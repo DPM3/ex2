@@ -18,6 +18,8 @@ public:
 	component_t& g();
 	component_t& b();
 
+	component_t brightness();
+
 private:
 	component_t m_r, m_g, m_b;
 };

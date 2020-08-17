@@ -8,6 +8,35 @@ BMPImg::BMPImg(std::string const& path) : BMPImg{} {
 BMPImg::BMPImg(int width, int height) 
 	: m_width{width}, m_height{height}, m_data{new Color[width * height]} { }
 
+BMPImg::BMPImg(BMPImg const& copy) {
+	*this = copy;
+}
+
+BMPImg::BMPImg(BMPImg&& copy) {
+	*this = copy;
+}
+BMPImg::~BMPImg() {
+	if (m_data == nullptr) {
+		return;
+	}
+	delete[] m_data;
+}
+
+BMPImg& operator=(BMPImg const& copy) {
+	load(copy.m_filePath);
+}
+
+BMPImg& operator=(BMPImg&& copy) {
+	m_width = copy.m_width;
+	m_height = copy.m_height;
+	copy.m_width = copy.m_height = 0;
+
+	m_data = copy.m_data;
+	copy.m_data = nullptr;
+
+	m_filePath = std::move(copy.m_filePath);
+}
+
 void load(std::string const& path) {
 	m_filePath = path;
 	std::ifstream file {path};

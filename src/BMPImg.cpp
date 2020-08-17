@@ -9,6 +9,7 @@ BMPImg::BMPImg(int width, int height)
 	: m_width{width}, m_height{height}, m_data{new Color[width * height]} { }
 
 void load(std::string const& path) {
+	m_filePath = path;
 	std::ifstream file {path};
 	if (!file) {
 		//TODO: throw something here.

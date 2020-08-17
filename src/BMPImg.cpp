@@ -78,3 +78,10 @@ void save(std::string const& path);
 Color& operator() (int i, int j) {
 	return data[width * i + j];
 }
+
+int width() {
+	return m_width;
+}
+int height() {
+	return m_height;
+}

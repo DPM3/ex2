@@ -28,6 +28,7 @@ struct BMPImg::Loader {
 			//TODO: throw something here.
 		}
 
+		std::string content;
 		file >> content;
 		return content;
 	}
@@ -83,9 +84,7 @@ struct BMPImg::Loader {
 	}
 
 	static std::vector<Color> parseColPlt(char* content, int pltSize) {
-		if (colPlt == nullptr) { return; }
-
-		std::vector<Color> result {pltSize};
+		std::vector<Color> result (pltSize);
 
 		for (int i = 0; i < pltSize; ++i) {
 			result.push_back(Color{readChar(&content), readChar(&content), readChar(&content)});
@@ -94,10 +93,10 @@ struct BMPImg::Loader {
 		return result;
 	}
 
-	static vector<char> parsePixelArr8(char* content, int width, int height) {
+	static std::vector<char> parsePixelArr8(char* content, int width, int height) {
 		int padding = 4 - ((width) % 4);
 		int rowWidth = width + padding;
-		vector<char> result {rowWidth * height};
+		std::vector<char> result (rowWidth * height);
 
 		for (int i = 0; i < rowWidth * height; ++i) {
 			if (i % rowWidth == width) {
@@ -108,10 +107,10 @@ struct BMPImg::Loader {
 		return result;
 	}
 
-	static vector<Color> parsePixelArr24(char* content, int width, int height) {
+	static std::vector<Color> parsePixelArr24(char* content, int width, int height) {
 		int padding = 4 - ((width * 3) % 4);
 		int rowWidth = width + padding;
-		vector<Color> result {rowWidth * height};
+		std::vector<Color> result (rowWidth * height);
 
 		for (int i = 0; i < rowWidth * height; i += 4) {
 			if (i % rowWidth == width) {
@@ -128,40 +127,12 @@ BMPImg::BMPImg(std::string const& path) : BMPImg{} {
 }
 
 BMPImg::BMPImg(int width, int height) 
-	: m_width{width}, m_height{height}, m_data{new Color[width * height]} { }
+	: m_width{width}, m_height{height}, m_usingColPlt{false}, m_colors(width * height) { }
 
-BMPImg::BMPImg(BMPImg const& copy) {
-	*this = copy;
-}
 
-BMPImg::BMPImg(BMPImg&& copy) {
-	*this = copy;
-}
-BMPImg::~BMPImg() {
-	if (m_data == nullptr) {
-		return;
-	}
-	delete[] m_data;
-}
-
-BMPImg& operator=(BMPImg const& copy) {
-	load(copy.m_filePath);
-}
-
-BMPImg& operator=(BMPImg&& copy) {
-	m_width = copy.m_width;
-	m_height = copy.m_height;
-	copy.m_width = copy.m_height = 0;
-
-	m_data = copy.m_data;
-	copy.m_data = nullptr;
-
-	m_filePath = std::move(copy.m_filePath);
-}
-
-void load(std::string const& path) {
+void BMPImg::load(std::string const& path) {
 	std::string s = Loader::loadFile(path);
-	char* contentp = s.c_str();
+	char* contentp = const_cast<char*>(s.c_str());
 
 	//////////-- The Header --//////////
 	int fileSize, arrayOffset;
@@ -170,9 +141,10 @@ void load(std::string const& path) {
 
 	//////////-- The DIB Header --//////////
 	m_usingColPlt = true;
-	int bits4pixel, paletteSize;
-	Loader::parseDIBHeader(contentp, &m_width, &m_height, &bits4pixel, &paletteSize);
-	m_usingColPlt = bits4pixel == 8;
+	short bits4Pixel;
+	int paletteSize;
+	Loader::parseDIBHeader(contentp, &m_width, &m_height, &bits4Pixel, &paletteSize);
+	m_usingColPlt = bits4Pixel == 8;
 	contentp += 40;
 
 	//////////-- The Color Palette --//////////
@@ -189,15 +161,19 @@ void load(std::string const& path) {
 	}
 }
 
-void save(std::string const& path);
 
-Color& operator() (int i, int j) {
-	return data[width * i + j];
+Color& BMPImg::operator() (int i, int j) {
+	if (!m_usingColPlt) {
+		return m_colors[m_width * i + j];
+	} else {
+		//TODO need to return some sort of ColorRef class that can handle this situation
+		throw std::string{"please don't use this function currently"};
+	}
 }
 
-int width() {
+int BMPImg::width() {
 	return m_width;
 }
-int height() {
+int BMPImg::height() {
 	return m_height;
 }

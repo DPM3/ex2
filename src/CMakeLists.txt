@@ -5,3 +5,5 @@ set(CXX_STANDARD C++17)
 add_compile_options(-Wall -Wextra -pedantic -Werror)
 
 add_library(color SHARED Color.cpp)
+add_library(bmpImg SHARED BMPImg.cpp)
+target_link_libraries(bmpImg color)

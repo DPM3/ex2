@@ -2,7 +2,7 @@
 
 class Color {
 public:
-	typedef unsigned char component_t;
+	typedef char component_t;
 
 	Color(component_t r = 0, component_t g = 0, component_t b = 0);
 

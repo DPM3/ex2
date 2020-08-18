@@ -20,6 +20,7 @@ public:
 	BMPImg& operator=(BMPImg&& copy);
 
 	void load(std::string const& path);
+	BMPImg makeCopy(std::string const& path);
 	void save();
 	Color& operator() (int i, int j);
 	int width();

@@ -1,14 +1,16 @@
 #pragma once
 
 #include<string>
+#include<vector>
 
 #include"Color.h"
 
 class BMPImg {
 	int m_width, m_height;
-	bool m_usingColorPalette;
-	Color* m_colors;
-	unsigned char* m_pixelArray;
+	bool m_usingColPlt;
+	std::vector<Color> m_colors;
+	std::vector<char> m_vals;
+	struct Loader;
 public:
 	BMPImg() = default;
 	BMPImg(int width, int height);

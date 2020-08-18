@@ -1,5 +1,127 @@
 #include"BMPImg.h"
 #include<fstream>
+#include<cmath>
+
+struct BMPImg::Loader {
+	//exceptions:
+	class CorruptBMPFile { };
+
+	Loader() = default;
+
+	static char readChar(char* *content) {
+		return *( (*content)++ );
+	}
+	static int readInt(char* *content) {
+		int& result = *( (int*) *content );
+		*content += sizeof(int) / sizeof(char);
+		return result;
+	}
+	static short readShort(char* *content) {
+		short& result = *( (short*) *content );
+		*content += sizeof(short) / sizeof(char);
+		return result;
+	}
+
+	static std::string loadFile(std::string const& path) {
+		std::ifstream file {path};
+		if (!file) {
+			//TODO: throw something here.
+		}
+
+		file >> content;
+		return content;
+	}
+
+	static void parseHeader(char* content, int *fileSize, int *pixelArrOffset) {
+		if (readChar(&content) != 'B' || readChar(&content) != 'M') {
+			throw CorruptBMPFile{};
+		}
+
+		if (fileSize != nullptr) {
+			*fileSize = readInt(&content);
+		}
+
+		//reserved bytes:
+		readShort(&content);
+		readShort(&content);
+
+		if (pixelArrOffset != nullptr) {
+			*pixelArrOffset = readInt(&content);
+		}
+	}
+
+	static void parseDIBHeader(char* content, int *bmapWidth, int *bmapHeight,
+	                    short *bits4Pixel, int *colPltSize) {
+		int DIBHeaderSize = readInt(&content);
+		if (DIBHeaderSize != 40) {
+			throw CorruptBMPFile{};
+		}
+
+		if (bmapWidth != nullptr) {
+			*bmapWidth = readInt(&content);
+		}
+		if (bmapHeight != nullptr) {
+			*bmapHeight = readInt(&content);
+		}
+
+		if (readShort(&content) != 1) {
+			throw CorruptBMPFile{};
+		}
+
+		if (bits4Pixel != nullptr) {
+			*bits4Pixel = readShort(&content);
+		}
+
+		content += 16; //skip compression and real-world scale data
+
+		if (colPltSize != nullptr) {
+			*colPltSize = readInt(&content);
+			if (*colPltSize == 0) {
+				*colPltSize = std::pow(2, *bits4Pixel);
+			}
+		}
+	}
+
+	static std::vector<Color> parseColPlt(char* content, int pltSize) {
+		if (colPlt == nullptr) { return; }
+
+		std::vector<Color> result {pltSize};
+
+		for (int i = 0; i < pltSize; ++i) {
+			result.push_back(Color{readChar(&content), readChar(&content), readChar(&content)});
+			++content;//skip the redundant 0 every 4'th element
+		}
+		return result;
+	}
+
+	static vector<char> parsePixelArr8(char* content, int width, int height) {
+		int padding = 4 - ((width) % 4);
+		int rowWidth = width + padding;
+		vector<char> result {rowWidth * height};
+
+		for (int i = 0; i < rowWidth * height; ++i) {
+			if (i % rowWidth == width) {
+				i += padding;
+			}
+			result.push_back(content[i]);
+		}
+		return result;
+	}
+
+	static vector<Color> parsePixelArr24(char* content, int width, int height) {
+		int padding = 4 - ((width * 3) % 4);
+		int rowWidth = width + padding;
+		vector<Color> result {rowWidth * height};
+
+		for (int i = 0; i < rowWidth * height; i += 4) {
+			if (i % rowWidth == width) {
+				i += padding;
+			}
+			result.push_back(Color{content[i], content[i + 1], content[i + 2]});
+		}
+		return result;
+	}
+};
 
 BMPImg::BMPImg(std::string const& path) : BMPImg{} {
 	load(path);
@@ -38,52 +160,33 @@ BMPImg& operator=(BMPImg&& copy) {
 }
 
 void load(std::string const& path) {
-	m_filePath = path;
-	std::ifstream file {path};
-	if (!file) {
-		//TODO: throw something here.
-	}
-
-	//after these 3 lines, s.c_str() brings an array identical to the file,
-	//and contentp is a pointer moving around that array.
-	std::string s;
-	file >> s;
+	std::string s = Loader::loadFile(path);
 	char* contentp = s.c_str();
 
-	//this function reads the char pointed by contentp, and increments contentp to the next char.
-	auto readChar = [](char* *contentp) -> char {
-		return *( (*contentp)++ );
-	};
-	//this function reads the int pointed by contentp, and increments contentp to the next int.
-	auto readInt = [](char* *contentp) -> int {
-		int& result = *( (int*) *contentp );
-		*contentp += sizeof(int) / sizeof(char);
-		return result;
-	};
-	auto readShort = [](char* *contentp) -> short {
-		short& result = *( (short*) *contentp );
-		*contentp += sizeof(short) / sizeof(char);
-		return result;
-	};
-
 	//////////-- The Header --//////////
-	if (readChar(&contentp) != 'B' || readChar(&contentp) != 'M') {
-		//TODO: throw something here.
-	}
-	int fileSize = readInt(&contentp);//get file size(array size also)
-	contentp += 4; //move past the 4 bytes of reserved content
-	int arrayOffset = readInt(&contentp);//get pixel array offset in array
+	int fileSize, arrayOffset;
+	Loader::parseHeader(contentp, &fileSize, &arrayOffset);
+	contentp += 14;
 
 	//////////-- The DIB Header --//////////
-	if (readInt(&contentp) != 40) {
-		//TODO: throw something here.
+	m_usingColPlt = true;
+	int bits4pixel, paletteSize;
+	Loader::parseDIBHeader(contentp, &m_width, &m_height, &bits4pixel, &paletteSize);
+	m_usingColPlt = bits4pixel == 8;
+	contentp += 40;
+
+	//////////-- The Color Palette --//////////
+	if (m_usingColPlt) {
+		m_colors = Loader::parseColPlt(contentp, paletteSize);
+		contentp += 4 * paletteSize;
 	}
-	m_width  = readInt(&contentp);
-	m_height = readInt(&contentp);
-	if (readShort(&contentp) != 1) {
-		//TODO: throw something here.
+
+	//////////-- The Pixel Array --//////////
+	if (m_usingColPlt) {
+		m_vals = Loader::parsePixelArr8(contentp, m_width, m_height);
+	} else {
+		m_colors = Loader::parsePixelArr24(contentp, m_width, m_height);
 	}
-	
 }
 
 void save(std::string const& path);

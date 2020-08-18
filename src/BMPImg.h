@@ -6,8 +6,9 @@
 
 class BMPImg {
 	int m_width, m_height;
-	Color* m_data;
-	string m_filePath;
+	bool m_usingColorPalette;
+	Color* m_colors;
+	unsigned char* m_pixelArray;
 public:
 	BMPImg() = default;
 	BMPImg(int width, int height);
@@ -20,8 +21,7 @@ public:
 	BMPImg& operator=(BMPImg&& copy);
 
 	void load(std::string const& path);
-	BMPImg makeCopy(std::string const& path);
-	void save();
+	void save(std::string const& path);
 	Color& operator() (int i, int j);
 	int width();
 	int height();

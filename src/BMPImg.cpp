@@ -60,6 +60,11 @@ void load(std::string const& path) {
 		*contentp += sizeof(int) / sizeof(char);
 		return result;
 	};
+	auto readShort = [](char* *contentp) -> short {
+		short& result = *( (short*) *contentp );
+		*contentp += sizeof(short) / sizeof(char);
+		return result;
+	};
 
 	//////////-- The Header --//////////
 	if (readChar(&contentp) != 'B' || readChar(&contentp) != 'M') {
@@ -70,6 +75,14 @@ void load(std::string const& path) {
 	int arrayOffset = readInt(&contentp);//get pixel array offset in array
 
 	//////////-- The DIB Header --//////////
+	if (readInt(&contentp) != 40) {
+		//TODO: throw something here.
+	}
+	m_width  = readInt(&contentp);
+	m_height = readInt(&contentp);
+	if (readShort(&contentp) != 1) {
+		//TODO: throw something here.
+	}
 	
 }
 

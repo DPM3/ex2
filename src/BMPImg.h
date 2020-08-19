@@ -8,8 +8,7 @@
 class BMPImg {
 	int m_width, m_height;
 	bool m_usingColPlt;
-	std::vector<Color> m_colors;
-	std::vector<char> m_vals;
+	std::vector<Color> m_data;
 	struct Loader;
 public:
 	BMPImg() = default;

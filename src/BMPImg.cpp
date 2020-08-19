@@ -87,7 +87,7 @@ struct BMPImg::Loader {
 		std::vector<Color> result (pltSize);
 
 		for (int i = 0; i < pltSize; ++i) {
-			result.push_back(Color{readChar(&content), readChar(&content), readChar(&content)});
+			result[i] = Color{readChar(&content), readChar(&content), readChar(&content)};
 			++content;//skip the redundant 0 every 4'th element
 		}
 		return result;
@@ -102,7 +102,7 @@ struct BMPImg::Loader {
 			if (i % rowWidth == width) {
 				i += padding;
 			}
-			result.push_back(content[i]);
+			result[i] = content[i];
 		}
 		return result;
 	}
@@ -116,7 +116,7 @@ struct BMPImg::Loader {
 			if (i % rowWidth == width) {
 				i += padding;
 			}
-			result.push_back(Color{content[i], content[i + 1], content[i + 2]});
+			result[i] = Color{content[i], content[i + 1], content[i + 2]};
 		}
 		return result;
 	}
@@ -127,7 +127,7 @@ BMPImg::BMPImg(std::string const& path) : BMPImg{} {
 }
 
 BMPImg::BMPImg(int width, int height) 
-	: m_width{width}, m_height{height}, m_usingColPlt{false}, m_colors(width * height) { }
+	: m_width{width}, m_height{height}, m_usingColPlt{false}, m_data(width * height) { }
 
 
 void BMPImg::load(std::string const& path) {
@@ -147,28 +147,26 @@ void BMPImg::load(std::string const& path) {
 	m_usingColPlt = bits4Pixel == 8;
 	contentp += 40;
 
-	//////////-- The Color Palette --//////////
+	//////////-- The Color Palette & Pixel Array --//////////
 	if (m_usingColPlt) {
-		m_colors = Loader::parseColPlt(contentp, paletteSize);
+		std::vector<Color> colPlt = Loader::parseColPlt(contentp, paletteSize);
 		contentp += 4 * paletteSize;
-	}
 
-	//////////-- The Pixel Array --//////////
-	if (m_usingColPlt) {
-		m_vals = Loader::parsePixelArr8(contentp, m_width, m_height);
+		std::vector<char> pixelVals = Loader::parsePixelArr8(contentp, m_width, m_height);
+
+		m_data = std::vector<Color>(pixelVals.size());
+
+		for (int i = 0; i < (int) m_data.size(); ++i) {
+			m_data[i] = colPlt[pixelVals[i]];
+		}
 	} else {
-		m_colors = Loader::parsePixelArr24(contentp, m_width, m_height);
+		m_data = Loader::parsePixelArr24(contentp, m_width, m_height);
 	}
 }
 
 
 Color& BMPImg::operator() (int i, int j) {
-	if (!m_usingColPlt) {
-		return m_colors[m_width * i + j];
-	} else {
-		//TODO need to return some sort of ColorRef class that can handle this situation
-		throw std::string{"please don't use this function currently"};
-	}
+	return m_data[m_width * i + j];
 }
 
 int BMPImg::width() {

@@ -9,17 +9,17 @@ struct BMPImg::Loader {
 
 	Loader() = default;
 
-	static char readChar(char* *content) {
+	static char readChar(const char* *content) {
 		return *( (*content)++ );
 	}
-	static int readInt(char* *content) {
+	static int readInt(const char* *content) {
 		int& result = *( (int*) *content );
-		*content += sizeof(int) / sizeof(char);
+		*content += sizeof(int) / sizeof(const char);
 		return result;
 	}
-	static short readShort(char* *content) {
+	static short readShort(const char* *content) {
 		short& result = *( (short*) *content );
-		*content += sizeof(short) / sizeof(char);
+		*content += sizeof(short) / sizeof(const char);
 		return result;
 	}
 
@@ -34,7 +34,7 @@ struct BMPImg::Loader {
 		return content;
 	}
 
-	static void parseHeader(char* content, int *fileSize, int *pixelArrOffset) {
+	static void parseHeader(const char* content, int *fileSize, int *pixelArrOffset) {
 		if (readChar(&content) != 'B' || readChar(&content) != 'M') {
 			throw CorruptBMPFile{};
 		}
@@ -52,7 +52,7 @@ struct BMPImg::Loader {
 		}
 	}
 
-	static void parseDIBHeader(char* content, int *bmapWidth, int *bmapHeight,
+	static void parseDIBHeader(const char* content, int *bmapWidth, int *bmapHeight,
 	                    short *bits4Pixel, int *colPltSize) {
 		int DIBHeaderSize = readInt(&content);
 		if (DIBHeaderSize != 40) {
@@ -84,7 +84,7 @@ struct BMPImg::Loader {
 		}
 	}
 
-	static std::vector<Color> parseColPlt(char* content, int pltSize) {
+	static std::vector<Color> parseColPlt(const char* content, int pltSize) {
 		std::vector<Color> result (pltSize);
 
 		for (int i = 0; i < pltSize; ++i) {
@@ -94,7 +94,7 @@ struct BMPImg::Loader {
 		return result;
 	}
 
-	static std::vector<char> parsePixelArr8(char* content, int width, int height) {
+	static std::vector<char> parsePixelArr8(const char* content, int width, int height) {
 		int padding = 4 - ((width) % 4);
 		int rowWidth = width + padding;
 		std::vector<char> result (rowWidth * height);
@@ -108,7 +108,7 @@ struct BMPImg::Loader {
 		return result;
 	}
 
-	static std::vector<Color> parsePixelArr24(char* content, int width, int height) {
+	static std::vector<Color> parsePixelArr24(const char* content, int width, int height) {
 		int padding = 4 - ((width * 3) % 4);
 		int rowWidth = width + padding;
 		std::vector<Color> result (rowWidth * height);
@@ -133,7 +133,7 @@ BMPImg::BMPImg(int width, int height)
 
 void BMPImg::load(std::string const& path) {
 	std::string s = Loader::loadFile(path);
-	char* contentp = const_cast<char*>(s.c_str());
+	const char* contentp = s.c_str();
 
 	//////////-- The Header --//////////
 	int fileSize, arrayOffset;

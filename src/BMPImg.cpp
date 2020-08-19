@@ -5,6 +5,7 @@
 struct BMPImg::Loader {
 	//exceptions:
 	class CorruptBMPFile { };
+	class BadFile { };
 
 	Loader() = default;
 
@@ -25,7 +26,7 @@ struct BMPImg::Loader {
 	static std::string loadFile(std::string const& path) {
 		std::ifstream file {path};
 		if (!file) {
-			//TODO: throw something here.
+			throw BadFile{};
 		}
 
 		std::string content;

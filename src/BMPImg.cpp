@@ -10,17 +10,10 @@ struct BMPImg::Loader {
 
 	Loader() = default;
 
-	static char readChar(const char* *content) {
-		return *( (*content)++ );
-	}
-	static int readInt(const char* *content) {
-		int& result = *( (int*) *content );
-		*content += sizeof(int) / sizeof(const char);
-		return result;
-	}
-	static short readShort(const char* *content) {
-		short& result = *( (short*) *content );
-		*content += sizeof(short) / sizeof(const char);
+	template<typename T>
+	static T readVar(const char* *content) {
+		T& result = *( (T*) *content );
+		*content += sizeof(T) / sizeof(const char);
 		return result;
 	}
 
@@ -29,49 +22,49 @@ struct BMPImg::Loader {
 	}
 
 	static void parseHeader(const char* content, int *fileSize, int *pixelArrOffset) {
-		if (readChar(&content) != 'B' || readChar(&content) != 'M') {
+		if (readVar<char>(&content) != 'B' || readVar<char>(&content) != 'M') {
 			throw CorruptBMPFile{};
 		}
 
 		if (fileSize != nullptr) {
-			*fileSize = readInt(&content);
+			*fileSize = readVar<int>(&content);
 		}
 
 		//reserved bytes:
-		readShort(&content);
-		readShort(&content);
+		readVar<short>(&content);
+		readVar<short>(&content);
 
 		if (pixelArrOffset != nullptr) {
-			*pixelArrOffset = readInt(&content);
+			*pixelArrOffset = readVar<int>(&content);
 		}
 	}
 
 	static void parseDIBHeader(const char* content, int *bmapWidth, int *bmapHeight,
 	                    short *bits4Pixel, int *colPltSize) {
-		int DIBHeaderSize = readInt(&content);
+		int DIBHeaderSize = readVar<int>(&content);
 		if (DIBHeaderSize != 40) {
 			throw CorruptBMPFile{};
 		}
 
 		if (bmapWidth != nullptr) {
-			*bmapWidth = readInt(&content);
+			*bmapWidth = readVar<int>(&content);
 		}
 		if (bmapHeight != nullptr) {
-			*bmapHeight = readInt(&content);
+			*bmapHeight = readVar<int>(&content);
 		}
 
-		if (readShort(&content) != 1) {
+		if (readVar<short>(&content) != 1) {
 			throw CorruptBMPFile{};
 		}
 
 		if (bits4Pixel != nullptr) {
-			*bits4Pixel = readShort(&content);
+			*bits4Pixel = readVar<short>(&content);
 		}
 
 		content += 16; //skip compression and real-world scale data
 
 		if (colPltSize != nullptr) {
-			*colPltSize = readInt(&content);
+			*colPltSize = readVar<int>(&content);
 			if (*colPltSize == 0) {
 				*colPltSize = std::pow(2, *bits4Pixel);
 			}
@@ -82,7 +75,7 @@ struct BMPImg::Loader {
 		std::vector<Color> result (pltSize);
 
 		for (int i = 0; i < pltSize; ++i) {
-			result[i] = Color{readChar(&content), readChar(&content), readChar(&content)};
+			result[i] = Color{readVar<char>(&content), readVar<char>(&content), readVar<char>(&content)};
 			++content;//skip the redundant 0 every 4'th element
 		}
 		return result;

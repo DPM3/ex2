@@ -10,6 +10,8 @@ class BMPImg {
 	std::vector<Color> m_data;
 	struct Loader;
 	struct Writer;
+	typedef unsigned char byte;
+	friend int main();
 public:
 	BMPImg() = default;
 	BMPImg(int width, int height);

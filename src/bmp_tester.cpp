@@ -42,7 +42,7 @@ void convert_to_grayscale(const std::string& imagePath,
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			Color ic = oimg(i, j);
-			Color::component_t b = c.brightness();
+			Color::component_t b = ic.brightness();
 			Color oc = Color(b, b, b);
 			oimg(i, j) = oc;
 		}

@@ -6,4 +6,6 @@ add_compile_options(-Wall -Wextra -pedantic -Werror)
 
 add_library(color SHARED Color.cpp)
 add_library(bmpImg SHARED BMPImg.cpp)
-target_link_libraries(bmpImg color)
+add_library(bmpTester SHARED bmp_tester.cpp)
+add_executable(myTester myTest.cpp)
+target_link_libraries(myTester bmpTester color)

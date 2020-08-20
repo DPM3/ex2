@@ -1,4 +1,5 @@
 #include"BMPImg.h"
+#include<iostream>
 #include<fstream>
 #include<cmath>
 #include"file_reading.cpp"
@@ -100,14 +101,18 @@ struct BMPImg::Loader {
 		int padding = 4 - ((width * 3) % 4);
 		if (padding == 4) { padding = 0; }
 		int rowWidth = width + padding;
-		std::vector<Color> result (rowWidth * height);
+		std::vector<Color> result (width * height);
 
-		for (int i = 0, j = 0; i < rowWidth * height; i += 3, ++j) {
+		for (int i = 0, j = 0; i < rowWidth * height * 3; i += 3, ++j) {
 			if (i % rowWidth == width) {
 				i += padding;
 			}
 			result[j] = Color{content[i], content[i + 1], content[i + 2]};
+			if (i == rowWidth * height - 1) {
+				std::cout << "parsePixelArr24 for: " << j <<", "<<i<< std::endl;
+			}
 		}
+		std::cout << "parsePixelArr24: " << width << height << padding << std::endl;
 		return result;
 	}
 };
@@ -158,8 +163,9 @@ struct BMPImg::Writer {
 				writeVar<byte>(&s, pixel.g());
 				writeVar<byte>(&s, pixel.b());
 			}
+			const byte garbage = 17;
 			for (int it = 0; it < padding; ++it) {
-				writeVar<byte>(&s, 0);
+				writeVar<byte>(&s, garbage );
 			}
 		}
 		return s;

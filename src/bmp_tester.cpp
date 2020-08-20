@@ -6,13 +6,13 @@ namespace testing {
 namespace bmp {
 
 void rotate_image(const std::string& imagePath, const std::string& outputPath) {
-    BMPImg iimg = BMPImg(imagePath);
+    BMPImg iimg (imagePath);
 
     //The width and height of the input image, or the height and width of the output image
     const int iwidth_oheight = iimg.width();
     const int iheight_owidth = iimg.height();
 
-    BMPImg oimg = BMPImg(iheight_owidth, iwidth_oheight);
+    BMPImg oimg (iheight_owidth, iwidth_oheight);
 
     //First we'll transpose the image
     for (int i = 0; i < iheight_owidth; i++) {
@@ -20,13 +20,14 @@ void rotate_image(const std::string& imagePath, const std::string& outputPath) {
             oimg(j, i) = iimg(i, j);
         }
     }
+	oimg.save(outputPath);
 
     //Then we'll reverse each column of the output image, and that'll make a 90 degress rotation
     for (int i = 0; i < iheight_owidth; i++) {
-        for (int j = 0; j < iwidth_oheight / 2; j++) {
+        for (int j = 0; j < iwidth_oheight /2.f; j++) {
             Color temp = oimg(j, i);
-            oimg(j, i) = oimg(iwidth_oheight - j, i);
-            oimg(iwidth_oheight - j, i) = temp;
+            oimg(j, i) = oimg(iwidth_oheight - j - 1, i);
+            oimg(iwidth_oheight - j - 1, i) = temp;
         }
     }
 	oimg.save(outputPath);

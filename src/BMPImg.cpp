@@ -109,10 +109,8 @@ struct BMPImg::Loader {
 			}
 			result[j] = Color{content[i], content[i + 1], content[i + 2]};
 			if (i == rowWidth * height - 1) {
-				std::cout << "parsePixelArr24 for: " << j <<", "<<i<< std::endl;
 			}
 		}
-		std::cout << "parsePixelArr24: " << width << height << padding << std::endl;
 		return result;
 	}
 };
@@ -122,7 +120,7 @@ struct BMPImg::Writer {
 	static void writeVar(std::string* s, T t) {
 		const byte* contentOfT = (const byte*) &t;
 		for (int i = 0; (long unsigned int) i < sizeof(T) / sizeof(byte); ++i) {
-			*s += contentOfT[i];
+			*s += (const char) contentOfT[i];
 		}
 	}
 	static void writeToFile(std::string const& path, std::string const& content) {
@@ -151,14 +149,14 @@ struct BMPImg::Writer {
 		writeVar(&s, 0); //numer of important colors
 		return s;
 	}
-	static std::string encodePixelArr(std::vector<Color> pixels, int width) {
+	static std::string encodePixelArr(std::vector<Color> const& pixels, int width) {
 		std::string s = "";
 		int padding = 4 - ((width * 3) % 4);
 		if (padding == 4) { padding = 0; }
 		int height = pixels.size() / width;
 		for (int i = 0; i < height; ++i) {
 			for (int j = 0; j < width; ++j) {
-				Color& pixel = pixels[width * i + j];
+				Color const& pixel = pixels.at(width * i + j);
 				writeVar<byte>(&s, pixel.r());
 				writeVar<byte>(&s, pixel.g());
 				writeVar<byte>(&s, pixel.b());
@@ -179,7 +177,6 @@ BMPImg::BMPImg(std::string const& path) : BMPImg{} {
 BMPImg::BMPImg(int width, int height) 
 	: m_width{width}, m_height{height}, m_data(width * height) { }
 
-
 void BMPImg::load(std::string const& path) {
 	std::string s = Loader::loadFile(path);
 	const byte* contentp = (const byte*) s.c_str();
@@ -198,19 +195,19 @@ void BMPImg::load(std::string const& path) {
 
 	//////////-- The Color Palette & Pixel Array --//////////
 	if (usingColPlt) {
-		std::vector<Color> colPlt = Loader::parseColPlt(contentp, paletteSize);
+		std::vector<Color> colPlt = std::move(Loader::parseColPlt(contentp, paletteSize));
 
 		contentp = (const byte*)s.c_str() + arrayOffset;
-		std::vector<byte> pixelVals = Loader::parsePixelArr8(contentp, m_width, m_height);
+		std::vector<byte> pixelVals = std::move(Loader::parsePixelArr8(contentp, m_width, m_height));
 
-		m_data = std::vector<Color>(pixelVals.size());
+		m_data = std::move(std::vector<Color>(pixelVals.size()));
 
 		for (int i = 0; i < (int) m_data.size(); ++i) {
 			m_data[i] = colPlt[pixelVals[i]];
 		}
 	} else {
 		contentp = (const byte*)s.c_str() + arrayOffset;
-		m_data = Loader::parsePixelArr24(contentp, m_width, m_height);
+		m_data = std::move(Loader::parsePixelArr24(contentp, m_width, m_height));
 	}
 }
 

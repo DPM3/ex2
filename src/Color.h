@@ -18,6 +18,10 @@ public:
 	component_t& g();
 	component_t& b();
 
+	component_t const& r() const;
+	component_t const& g() const;
+	component_t const& b() const;
+
 	component_t brightness();
 
 private:

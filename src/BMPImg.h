@@ -11,7 +11,6 @@ class BMPImg {
 	struct Loader;
 	struct Writer;
 	typedef unsigned char byte;
-	friend int main();
 public:
 	BMPImg() = default;
 	BMPImg(int width, int height);

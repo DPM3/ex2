@@ -10,5 +10,9 @@ include_directories(${CMAKE_SOURCE_DIR})
 add_library(color SHARED Color.cpp)
 add_library(bmpImg SHARED BMPImg.cpp)
 add_library(bmpTester SHARED bmp_tester.cpp)
+
 add_executable(main main.cpp)
+set_target_properties(main PROPERTIES OUTPUT_NAME "ex2")
+set_target_properties(main PROPERTIES SUFFIX ".out")
+
 target_link_libraries(main bmpTester bmpImg color)

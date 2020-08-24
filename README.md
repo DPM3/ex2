@@ -20,8 +20,8 @@ This brings some flexibility.
 This compiles normally.
 just go
 
-'''
+```
 	cd \<wherever you want to compile to\>
 	cmake \<path to src dir\>
 	make
-'''
+```

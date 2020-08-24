@@ -1,6 +1,5 @@
 #include<iostream>
-#include"Color.h"
-#include"BMPImg.cpp"
+#include<vector>
 #include"bmp_tester.hpp"
 using namespace testing::bmp;
 using namespace std;

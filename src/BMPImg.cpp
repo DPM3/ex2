@@ -11,6 +11,8 @@ struct BMPImg::Loader {
 
 	Loader() = default;
 
+	//reads a T from array of bytes, as if it was an array of Ts,
+	//then increments pointer to the array to the next T.
 	template<typename T>
 	static T readVar(const byte* *content) {
 		T& result = *( (T*) *content );
@@ -18,10 +20,17 @@ struct BMPImg::Loader {
 		return result;
 	}
 
+	//load file content to a string
 	static std::string loadFile(std::string const& path) {
 		return readFileContent(path);
 	}
 
+	//////////-- Note About Parsing Functions --//////////
+	//all parsing functions here have a feature, when an output variable is equal to nullptr,
+	//then it assumes this variable is not interesting, and skips it.
+	//It Does Not Crash.
+
+	//parse header of BMP file, setting all atributes in it to the given out variables.
 	static void parseHeader(const byte* content, int *fileSize, int *pixelArrOffset) {
 		if (readVar<char>(&content) != 'B' || readVar<char>(&content) != 'M') {
 			throw CorruptBMPFile{};
@@ -40,6 +49,7 @@ struct BMPImg::Loader {
 		}
 	}
 
+	//parse DIB Header
 	static void parseDIBHeader(const byte* content, int *bmapWidth, int *bmapHeight,
 	                    short *bits4Pixel, int *colPltSize) {
 		int DIBHeaderSize = readVar<int>(&content);
@@ -72,6 +82,7 @@ struct BMPImg::Loader {
 		}
 	}
 
+	//parse color palette, and return array of colors in that palette.
 	static std::vector<Color> parseColPlt(const byte* content, int pltSize) {
 		std::vector<Color> result (pltSize);
 
@@ -82,6 +93,7 @@ struct BMPImg::Loader {
 		return result;
 	}
 
+	//parse pixel array for 8bit images (return type is the array).
 	static std::vector<byte> parsePixelArr8(const byte* content, int width, int height) {
 		int padding = 4 - ((width) % 4);
 		if (padding == 4) { padding = 0; }
@@ -97,6 +109,7 @@ struct BMPImg::Loader {
 		return result;
 	}
 
+	//parse pixel array for 24 bit images (return type is the array).
 	static std::vector<Color> parsePixelArr24(const byte* content, int width, int height) {
 		int padding = 4 - ((width * 3) % 4);
 		if (padding == 4) { padding = 0; }
@@ -116,6 +129,7 @@ struct BMPImg::Loader {
 };
 
 struct BMPImg::Writer {
+	//concatunate string s with t, as bytes.
 	template<typename T>
 	static void writeVar(std::string* s, T t) {
 		const byte* contentOfT = (const byte*) &t;
@@ -123,9 +137,13 @@ struct BMPImg::Writer {
 			*s += (const char) contentOfT[i];
 		}
 	}
+
+	//write string to file
 	static void writeToFile(std::string const& path, std::string const& content) {
 		writeFileContent(path, content);
 	}
+
+	//encode header, return content as string.
 	static std::string encodeHeader(int fileSize, int pixelArrOffset) {
 		std::string s  = "BM";
 		writeVar(&s, fileSize);
@@ -134,6 +152,8 @@ struct BMPImg::Writer {
 		writeVar(&s, pixelArrOffset);
 		return s;
 	}
+
+	//encode DIB header, return content as string.
 	static std::string encodeDIBHeader(short bits4pixel, int width, int height) {
 		std::string s = "";
 		writeVar(&s, 40); //size of this header
@@ -149,6 +169,8 @@ struct BMPImg::Writer {
 		writeVar(&s, 0); //numer of important colors
 		return s;
 	}
+
+	//encode pixel array (24 bit), return content as string.
 	static std::string encodePixelArr(std::vector<Color> const& pixels, int width) {
 		std::string s = "";
 		int padding = 4 - ((width * 3) % 4);
